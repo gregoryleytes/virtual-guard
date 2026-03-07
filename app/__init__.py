@@ -1,0 +1,1 @@
+"""Virtual Guard application package."""
