@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: virtual-guard
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn wsgi:application -w 2 -b 0.0.0.0:$PORT --timeout 60
+    envVars:
+      - key: IZCLOUD_BASE_URL
+        value: https://locks2.iz-cloud.com:46443
+      - key: IZCLOUD_USERNAME
+        sync: false
+      - key: IZCLOUD_PASSWORD
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_NUMBER
+        value: "+12202228122"
+      - key: MANAGER_PHONE
+        value: "+12016382317"
+      - key: HOA_NAME
+        value: "Sunrise HOA"
