@@ -1,4 +1,4 @@
-"""
+ """
 IZCloud REST API client — paths verified against Swagger /inexapi/...
 Base: https://locks2.iz-cloud.com:46443
 Auth: POST /inexapi/chatBot/Auth  →  Bearer token
@@ -67,18 +67,32 @@ class IZCloudClient:
     def _get(self, path: str, params: Dict = None) -> Any:
         url = f"{self.base_url}{path}"
         r = self._session.get(url, headers=self._headers(), params=params, timeout=self.timeout)
-        logger.info("IZCloud GET %s -> %d | %s", path, r.status_code, r.text[:500])
+        logger.info("IZCloud GET %s -> status=%d body=%r", path, r.status_code, r.text[:800])
         if not r.ok:
             raise IZCloudError(f"GET {path} failed: {r.status_code} {r.text}", r.status_code)
-        return r.json()
+        text = r.text.strip()
+        if not text:
+            return {}
+        try:
+            return r.json()
+        except Exception as e:
+            logger.warning("GET %s non-JSON response: %s | body=%r", path, e, r.text[:300])
+            return {}
 
     def _post(self, path: str, body: Dict) -> Any:
         url = f"{self.base_url}{path}"
         r = self._session.post(url, headers=self._headers(), json=body, timeout=self.timeout)
-        logger.info("IZCloud POST %s -> %d | %s", path, r.status_code, r.text[:500])
+        logger.info("IZCloud POST %s -> status=%d body=%r", path, r.status_code, r.text[:800])
         if not r.ok:
             raise IZCloudError(f"POST {path} failed: {r.status_code} {r.text}", r.status_code)
-        return r.json() if r.content else {}
+        text = r.text.strip()
+        if not text:
+            return {}
+        try:
+            return r.json()
+        except Exception as e:
+            logger.warning("POST %s non-JSON response: %s | body=%r", path, e, r.text[:300])
+            return {}
 
     def _delete(self, path: str) -> Any:
         url = f"{self.base_url}{path}"
