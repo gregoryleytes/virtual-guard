@@ -1,4 +1,4 @@
-"""
+  """
 Virtual Guard - AI-powered HOA Gate Assistant
 Powered by Claude (Anthropic) + Twilio + IZCloud
 Inex Technology — v2.0
@@ -18,7 +18,7 @@ from .conversation import ConversationManager
 from .state import SessionStore
 
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,
     format="%(asctime)s %(levelname)s [%(name)s] %(message)s"
 )
 logger = logging.getLogger("virtual_guard")
@@ -46,15 +46,34 @@ HOA_NAME        = os.environ.get("HOA_NAME",        "your community")
 @app.route("/voice/incoming", methods=["POST"])
 def voice_incoming():
     """
-    Entry point: Twilio calls this when intercom places a call.
-    Greets visitor and asks for PIN.
+    Entry point: Twilio calls this when a call arrives.
+    1. Look up caller phone in IZCloud.
+    2. If resident  -> greet by name, then ask for PIN to confirm.
+    3. If unknown   -> treat as visitor, ask for PIN.
     """
     call_sid = request.form.get("CallSid", "unknown")
     caller   = request.form.get("From", "")
     logger.info("VOICE INCOMING  call_sid=%s from=%s", call_sid, caller)
 
-    # Initialise session
-    sessions.init(call_sid, {"type": "voice", "caller": caller, "attempts": 0})
+    # Look up caller in IZCloud by phone number
+    phone    = _normalise_phone(caller)
+    resident = None
+    try:
+        resident = iz.find_resident_by_phone(phone)
+        logger.info("Caller lookup phone=%s resident=%s", phone, resident)
+    except Exception as e:
+        logger.warning("Resident lookup error: %s", e)
+
+    resident_name = resident.get("name", "") if resident else ""
+
+    # Initialise session — store resident if found
+    sessions.init(call_sid, {
+        "type":     "voice",
+        "caller":   caller,
+        "phone":    phone,
+        "resident": resident,
+        "attempts": 0,
+    })
 
     resp = VoiceResponse()
     gather = Gather(
@@ -66,13 +85,21 @@ def voice_incoming():
         speech_timeout="auto",
         language="en-US",
     )
-    gather.say(
-        f"Welcome to {HOA_NAME}. "
-        "Please enter or say your access PIN now, or press star to speak with the manager.",
-        voice="Polly.Joanna",
-    )
+
+    if resident_name:
+        greeting = (
+            f"Welcome back, {resident_name}! "
+            f"This is {HOA_NAME} Virtual Guard. "
+            "Please enter your PIN to open the gate, or press star for the manager."
+        )
+    else:
+        greeting = (
+            f"Welcome to {HOA_NAME}. "
+            "Please enter your access PIN, or press star to speak with the manager."
+        )
+
+    gather.say(greeting, voice="Polly.Joanna")
     resp.append(gather)
-    # No input fallback
     resp.redirect("/voice/no_input")
     return Response(str(resp), mimetype="text/xml")
 
@@ -264,4 +291,4 @@ def _normalise_phone(phone: str) -> str:
 
 
 def _mask(pin: str) -> str:
-    return "*" * max(0, len(pin) - 2) + pin[-2:] if pin else "" 
+    return "*" * max(0, len(pin) - 2) + pin[-2:] if pin else ""
