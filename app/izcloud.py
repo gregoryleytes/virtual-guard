@@ -1,4 +1,4 @@
- """
+"""
 IZCloud REST API client — paths verified against Swagger /inexapi/...
 Base: https://locks2.iz-cloud.com:46443
 Auth: POST /inexapi/chatBot/Auth  →  Bearer token
