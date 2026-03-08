@@ -264,4 +264,4 @@ def _normalise_phone(phone: str) -> str:
 
 
 def _mask(pin: str) -> str:
-    return "*" * max(0, len(pin) - 2) + pin[-2:] if pin else ""
+    return "*" * max(0, len(pin) - 2) + pin[-2:] if pin else "" 
