@@ -102,9 +102,9 @@ def voice_pin_received():
     # Validate PIN with IZCloud
     result = iz.validate_pin(pin)
     if result.get("valid"):
-        gate_id = result.get("gate_id")
-        iz.open_gate(gate_id)
-        logger.info("GATE OPENED  call_sid=%s pin=%s gate=%s", call_sid, _mask(pin), gate_id)
+        gate_uid = result.get("gate_uid") or iz.get_first_gate_uid()
+        iz.open_gate(gate_uid)
+        logger.info("GATE OPENED  call_sid=%s pin=%s gate=%s", call_sid, _mask(pin), gate_uid)
         sessions.clear(call_sid)
         resp.say(
             "Access granted. Welcome! The gate is opening now.",
