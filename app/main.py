@@ -1,4 +1,4 @@
-  """
+"""
 Virtual Guard - AI-powered HOA Gate Assistant
 Powered by Claude (Anthropic) + Twilio + IZCloud
 Inex Technology — v2.0
